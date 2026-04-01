@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedLife — Admin Panel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #f5f6fa;
+    --surface: #ffffff;
+    --border: #e8eaef;
+    --text: #1a1d23;
+    --muted: #6b7280;
+    --accent: #0ea5e9;
+    --accent-light: #e0f2fe;
+    --green: #10b981;
+    --green-light: #d1fae5;
+    --amber: #f59e0b;
+    --amber-light: #fef3c7;
+    --red: #ef4444;
+    --red-light: #fee2e2;
+    --sidebar-w: 220px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-mark {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .logo h1 { font-size: 15px; font-weight: 600; color: var(--text); }
+  .logo p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .nav { padding: 12px 10px; flex: 1; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+  }
+
+  .nav-item:hover { background: var(--bg); color: var(--text); }
+  .nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .sidebar-footer {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* MAIN */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 28px 28px;
+    max-width: calc(100vw - var(--sidebar-w));
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header {
+    margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .page-title { font-size: 20px; font-weight: 600; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  /* STAT CARDS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+
+  .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 6px 0 4px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .stat-change { font-size: 12px; }
+  .stat-change.up { color: var(--green); }
+  .stat-change.down { color: var(--red); }
+
+  /* TABLE */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .card-title { font-size: 14px; font-weight: 600; }
+
+  .btn {
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+
+  .btn:hover { background: var(--bg); }
+  .btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn.primary:hover { opacity: 0.9; }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  th {
+    text-align: left;
+    padding: 10px 20px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  td {
+    padding: 13px 20px;
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafbfc; }
+
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 500;
+  }
+
+  .badge.green { background: var(--green-light); color: #065f46; }
+  .badge.amber { background: var(--amber-light); color: #92400e; }
+  .badge.red { background: var(--red-light); color: #991b1b; }
+  .badge.blue { background: var(--accent-light); color: #0369a1; }
+
+  /* CHAT VIEW */
+  .chat-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0;
+    height: 580px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .chat-list {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+
+  .chat-list-header {
+    padding: 14px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .chat-item {
+    padding: 13px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  .chat-item:hover { background: var(--bg); }
+  .chat-item.active { background: var(--accent-light); }
+
+  .chat-item-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .chat-name { font-size: 13.5px; font-weight: 500; }
+  .chat-time { font-size: 11px; color: var(--muted); }
+  .chat-preview { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-unread {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 600;
+    float: right;
+    margin-top: -16px;
+  }
+
+  .chat-window {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--bg);
+  }
+
+  .msg { max-width: 75%; }
+  .msg.user { align-self: flex-end; }
+  .msg.bot { align-self: flex-start; }
+
+  .msg-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  .msg.user .msg-bubble {
+    background: var(--accent);
+    color: white;
+    border-radius: 12px 12px 2px 12px;
+  }
+
+  .msg.bot .msg-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px 12px 12px 2px;
+  }
+
+  .msg-meta { font-size: 10.5px; color: var(--muted); margin-top: 4px; padding: 0 2px; }
+  .msg.user .msg-meta { text-align: right; }
+
+  .chat-actions {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 8px;
+  }
+
+  .chat-input {
+    flex: 1;
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+  }
+
+  .chat-input:focus { border-color: var(--accent); }
+
+  /* SETTINGS */
+  .settings-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .settings-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .settings-row {
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+  }
+
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+  .settings-input {
+    width: 280px;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    background: var(--bg);
+  }
+
+  .settings-input:focus { border-color: var(--accent); background: white; }
+
+  textarea.settings-input {
+    height: 80px;
+    resize: vertical;
+    font-size: 12.5px;
+  }
+
+  /* TOGGLE */
+  .toggle {
+    width: 40px; height: 22px;
+    background: var(--border);
+    border-radius: 11px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .toggle.on { background: var(--green); }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+
+  .toggle.on::after { left: 21px; }
+
+  /* MINI CHART */
+  .chart-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 80px;
+    padding: 0 20px 0;
+  }
+
+  .bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .bar { width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; opacity: 0.8; transition: opacity 0.2s; }
+  .bar:hover { opacity: 1; }
+  .bar-label { font-size: 10px; color: var(--muted); }
+
+  .scrollbar-hidden { scrollbar-width: none; }
+  .scrollbar-hidden::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">M</div>
+    <h1>MedLife Admin</h1>
+    <p>Bot boshqaruv paneli</p>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('dashboard', this)">
+      <span class="nav-icon">▦</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('chats', this)">
+      <span class="nav-icon">💬</span> Suhbatlar
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item" onclick="showPage('appointments', this)">
+      <span class="nav-icon">📅</span> Qabullar
+    </div>
+    <div class="nav-item" onclick="showPage('settings', this)">
+      <span class="nav-icon">⚙</span> Sozlamalar
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <span class="status-dot"></span> Bot faol
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Bugungi holat — 1 Aprel, 2026</div>
+      </div>
+      <button class="btn primary">📤 Hisobot yuklab olish</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Bugungi xabarlar</div>
+        <div class="stat-value" style="color: var(--accent)">47</div>
+        <div class="stat-change up">↑ 12% kechagidan</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Yangi foydalanuvchilar</div>
+        <div class="stat-value" style="color: var(--green)">8</div>
+        <div class="stat-change up">↑ 3 ta yangi bugun</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Qabul so'rovlari</div>
+        <div class="stat-value" style="color: var(--amber)">5</div>
+        <div class="stat-change">2 ta kutilmoqda</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Javob vaqti</div>
+        <div class="stat-value" style="color: var(--text)">1.2s</div>
+        <div class="stat-change up">↑ Ajoyib</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Haftalik faollik</span>
+        <span style="font-size: 12px; color: var(--muted)">Xabarlar soni</span>
+      </div>
+      <div style="padding: 20px 20px 14px;">
+        <div class="chart-bar">
+          <div class="bar-wrap"><div class="bar" style="height: 40%"></div><div class="bar-label">Ds</div></div>
+          <div class="bar-wrap"><div class="bar" style="height: 65%"></div><div class="bar-label">Se</div></div>
+          <div class="bar-wrap"><div class="bar" style="height: 55%"></div><div class="bar-label">Ch</div></div>
+          <div class="bar-wrap"><div class="bar" style="height: 80%"></div><div class="bar-label">Pa</div></div>
+          <div class="bar-wrap"><div class="bar" style="height: 70%"></div><div class="bar-label">Ju</div></div>
+          <div class="bar-wrap"><div class="bar" style="height: 45%"></div><div class="bar-label">Sh</div></div>
+          <div class="bar-wrap"><div class="bar" style="height: 30%"></div><div class="bar-label">Ya</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Oxirgi qabul so'rovlari</span>
+        <button class="btn" onclick="showPage('appointments', document.querySelector('.nav-item:nth-child(3)'))">Barchasini ko'rish</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Bemor</th>
+            <th>Shifokor</th>
+            <th>Vaqt</th>
+            <th>Holat</th>
+            <th>Harakat</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Aziz Karimov</strong><br><span style="font-size:12px;color:var(--muted)">+998 90 123-45-67</span></td>
+            <td>Kardiolog</td>
+            <td>Bugun, 14:00</td>
+            <td><span class="badge green">Tasdiqlangan</span></td>
+            <td><button class="btn" style="font-size:12px;padding:4px 10px">Ko'rish</button></td>
+          </tr>
+          <tr>
+            <td><strong>Malika Yusupova</strong><br><span style="font-size:12px;color:var(--muted)">+998 91 234-56-78</span></td>
+            <td>Ginekolog</td>
+            <td>Ertaga, 10:30</td>
+            <td><span class="badge amber">Kutilmoqda</span></td>
+            <td><button class="btn primary" style="font-size:12px;padding:4px 10px">Tasdiqlash</button></td>
+          </tr>
+          <tr>
+            <td><strong>Jamshid Toshev</strong><br><span style="font-size:12px;color:var(--muted)">+998 93 345-67-89</span></td>
+            <td>Terapevt</td>
+            <td>3 Apr, 09:00</td>
+            <td><span class="badge amber">Kutilmoqda</span></td>
+            <td><button class="btn primary" style="font-size:12px;padding:4px 10px">Tasdiqlash</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CHATS -->
+  <div class="page" id="page-chats">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Suhbatlar</div>
+        <div class="page-sub">Barcha foydalanuvchi suhbatlari</div>
+      </div>
+    </div>
+
+    <div class="chat-layout">
+      <div class="chat-list scrollbar-hidden">
+        <div class="chat-list-header">Foydalanuvchilar</div>
+        <div class="chat-item active" onclick="selectChat(this, 'Aziz Karimov', 'AK')">
+          <div class="chat-item-top">
+            <span class="chat-name">Aziz Karimov</span>
+            <span class="chat-time">14:23</span>
+          </div>
+          <div class="chat-preview">Kardiologga qabulga yozish mumkinmi?</div>
+          <span class="chat-unread">2</span>
+        </div>
+        <div class="chat-item" onclick="selectChat(this, 'Malika Yusupova', 'MY')">
+          <div class="chat-item-top">
+            <span class="chat-name">Malika Yusupova</span>
+            <span class="chat-time">12:05</span>
+          </div>
+          <div class="chat-preview">UZI tahlili qancha turadi?</div>
+        </div>
+        <div class="chat-item" onclick="selectChat(this, 'Jamshid Toshev', 'JT')">
+          <div class="chat-item-top">
+            <span class="chat-name">Jamshid Toshev</span>
+            <span class="chat-time">10:48</span>
+          </div>
+          <div class="chat-preview">Rahmat, kelib ko'raman</div>
+          <span class="chat-unread">1</span>
+        </div>
+        <div class="chat-item" onclick="selectChat(this, 'Nilufar Razzaqova', 'NR')">
+          <div class="chat-item-top">
+            <span class="chat-name">Nilufar Razzaqova</span>
+            <span class="chat-time">Kecha</span>
+          </div>
+          <div class="chat-preview">Ish vaqtingiz qachon?</div>
+        </div>
+      </div>
+
+      <div class="chat-window">
+        <div class="chat-header">
+          <div class="avatar" id="chat-avatar">AK</div>
+          <div>
+            <div style="font-size:14px;font-weight:600;" id="chat-name-display">Aziz Karimov</div>
+            <div style="font-size:12px;color:var(--muted)">Telegram orqali</div>
+          </div>
+        </div>
+
+        <div class="chat-messages scrollbar-hidden" id="chat-messages">
+          <div class="msg user">
+            <div class="msg-bubble">Salom! Kardiologga qabulga yozish mumkinmi?</div>
+            <div class="msg-meta">14:20</div>
+          </div>
+          <div class="msg bot">
+            <div class="msg-bubble">Salom! Ha, albatta. Qabulga yozish uchun quyidagilarni yozib bering:<br><br>1. Ism familiyangiz<br>2. Telefon raqamingiz<br>3. Qulay kun va vaqt 😊</div>
+            <div class="msg-meta">🤖 Bot · 14:20</div>
+          </div>
+          <div class="msg user">
+            <div class="msg-bubble">Aziz Karimov, +998901234567, ertaga 14:00</div>
+            <div class="msg-meta">14:23</div>
+          </div>
+        </div>
+
+        <div class="chat-actions">
+          <input class="chat-input" placeholder="Admin sifatida javob yozing..." id="admin-reply" />
+          <button class="btn primary" onclick="sendAdminReply()">Yuborish</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPOINTMENTS -->
+  <div class="page" id="page-appointments">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Qabul jadvali</div>
+        <div class="page-sub">Barcha qabul so'rovlari</div>
+      </div>
+      <button class="btn primary">+ Yangi qabul</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Barcha so'rovlar</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" style="font-size:12px">Hammasi</button>
+          <button class="btn" style="font-size:12px;background:var(--amber-light);color:#92400e;border-color:var(--amber)">Kutilmoqda (2)</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Bemor</th>
+            <th>Telefon</th>
+            <th>Shifokor</th>
+            <th>Sana & Vaqt</th>
+            <th>Holat</th>
+            <th>Harakat</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--muted);font-family:'DM Mono',monospace;font-size:12px">#001</td>
+            <td><strong>Aziz Karimov</strong></td>
+            <td style="font-family:'DM Mono',monospace;font-size:12.5px">+998 90 123-45-67</td>
+            <td>Kardiolog</td>
+            <td>01.04.2026, 14:00</td>
+            <td><span class="badge green">Tasdiqlangan</span></td>
+            <td><button class="btn" style="font-size:12px;padding:4px 10px">✏ Tahrirlash</button></td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted);font-family:'DM Mono',monospace;font-size:12px">#002</td>
+            <td><strong>Malika Yusupova</strong></td>
+            <td style="font-family:'DM Mono',monospace;font-size:12.5px">+998 91 234-56-78</td>
+            <td>Ginekolog</td>
+            <td>02.04.2026, 10:30</td>
+            <td><span class="badge amber">Kutilmoqda</span></td>
+            <td>
+              <button class="btn primary" style="font-size:12px;padding:4px 10px" onclick="confirmAppt(this)">✓ Tasdiqlash</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted);font-family:'DM Mono',monospace;font-size:12px">#003</td>
+            <td><strong>Jamshid Toshev</strong></td>
+            <td style="font-family:'DM Mono',monospace;font-size:12.5px">+998 93 345-67-89</td>
+            <td>Terapevt</td>
+            <td>03.04.2026, 09:00</td>
+            <td><span class="badge amber">Kutilmoqda</span></td>
+            <td>
+              <button class="btn primary" style="font-size:12px;padding:4px 10px" onclick="confirmAppt(this)">✓ Tasdiqlash</button>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted);font-family:'DM Mono',monospace;font-size:12px">#004</td>
+            <td><strong>Nilufar Razzaqova</strong></td>
+            <td style="font-family:'DM Mono',monospace;font-size:12.5px">+998 94 456-78-90</td>
+            <td>Endokrinolog</td>
+            <td>28.03.2026, 11:00</td>
+            <td><span class="badge blue">Yakunlandi</span></td>
+            <td><button class="btn" style="font-size:12px;padding:4px 10px">Ko'rish</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Sozlamalar</div>
+        <div class="page-sub">Bot va klinika ma'lumotlarini tahrirlang</div>
+      </div>
+      <button class="btn primary">💾 Saqlash</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-header">🤖 Bot sozlamalari</div>
+      <div class="settings-row">
+        <div>
+          <div>Bot holati</div>
+          <div class="settings-label">Botni yoqish yoki o'chirish</div>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div>Admin bildirishnomalar</div>
+          <div class="settings-label">Har bir xabardan keyin adminlarga habar yuborish</div>
+        </div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div>Telegram Token</div>
+          <div class="settings-label">BotFather dan olingan token</div>
+        </div>
+        <input class="settings-input" type="password" value="7123456789:AAHdqTcvCH1vGWJx..." />
+      </div>
+      <div class="settings-row">
+        <div>
+          <div>Claude API Key</div>
+          <div class="settings-label">Anthropic API kaliti</div>
+        </div>
+        <input class="settings-input" type="password" value="sk-ant-api03-..." />
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-header">🏥 Klinika ma'lumotlari</div>
+      <div class="settings-row">
+        <div>
+          <div>Klinika nomi</div>
+          <div class="settings-label">Botda ko'rinadigan nom</div>
+        </div>
+        <input class="settings-input" value="MedLife Klinikasi" />
+      </div>
+      <div class="settings-row">
+        <div>
+          <div>Manzil</div>
+          <div class="settings-label">To'liq manzil</div>
+        </div>
+        <input class="settings-input" value="Toshkent, Chilonzor, 7-kv, 12-uy" />
+      </div>
+      <div class="settings-row">
+        <div>
+          <div>Telefon</div>
+          <div class="settings-label">Asosiy telefon raqam</div>
+        </div>
+        <input class="settings-input" value="+998 71 123-45-67" />
+      </div>
+      <div class="settings-row">
+        <div>
+          <div>Ish vaqti</div>
+          <div class="settings-label">Botda ko'rinadigan ish vaqti</div>
+        </div>
+        <input class="settings-input" value="Dush-Shan: 08:00-20:00 | Yak: 09:00-15:00" />
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-header">💬 AI Sozlamalari</div>
+      <div class="settings-row" style="align-items:flex-start">
+        <div style="padding-top:4px">
+          <div>System Prompt</div>
+          <div class="settings-label">Botning "shaxsiyati" va ko'rsatmalari</div>
+        </div>
+        <textarea class="settings-input">Siz MedLife Klinikasining professional AI assistantsiz. Foydalanuvchi qaysi tilda yozsa, o'sha tilda javob bering. Doimo xushmuomala va professional bo'ling...</textarea>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+function selectChat(el, name, initials) {
+  document.querySelectorAll('.chat-item').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('chat-avatar').textContent = initials;
+  document.getElementById('chat-name-display').textContent = name;
+}
+
+function sendAdminReply() {
+  const input = document.getElementById('admin-reply');
+  const text = input.value.trim();
+  if (!text) return;
+  const messages = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.innerHTML = `<div class="msg-bubble" style="background:#e8f5e9;border-color:#c8e6c9">👤 Admin: ${text}</div><div class="msg-meta">Hozir</div>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  input.value = '';
+}
+
+function confirmAppt(btn) {
+  const td = btn.closest('td').previousElementSibling;
+  btn.closest('td').previousElementSibling.innerHTML = '<span class="badge green">Tasdiqlangan</span>';
+  btn.textContent = '✓ Tasdiqlandi';
+  btn.classList.remove('primary');
+  btn.disabled = true;
+}
+</script>
+</body>
+</html>
