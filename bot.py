@@ -234,6 +234,10 @@ async def extract_and_save_appointment(user, history, reply):
         "operatorimiz sizga aloqaga chiqib",
         "qabulga yozilgan siz",
         "qayd etdim",
+        "uchrashuv tayinlandi",
+        "kutib olamiz",
+        "tayinlandi",
+        "qabulga kelganingizda",
     ]
     
     if not any(word in reply.lower() for word in trigger_words):
