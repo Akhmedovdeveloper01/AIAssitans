@@ -230,8 +230,12 @@ async def extract_and_save_appointment(user, history, reply):
         "administrator siz bilan bog'lanadi",
         "tez orada bog'lanamiz",
         "qabulingiz tasdiqlandi",
-        "ma'lumotlaringizni qabul qildik",
+        "ma'lumotlaringizni qayd etdim",
+        "operatorimiz sizga aloqaga chiqib",
+        "qabulga yozilgan siz",
+        "qayd etdim",
     ]
+    
     if not any(word in reply.lower() for word in trigger_words):
         return
 
