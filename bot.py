@@ -22,7 +22,6 @@ load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
-# API_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 API_URL = os.getenv("BACKEND_URL", "https://aiassistant-backend-production-1000.up.railway.app")
 
 if not TELEGRAM_TOKEN:
@@ -224,6 +223,55 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.edit_message_text(text=text, reply_markup=get_main_menu())
 
 
+
+async def extract_and_save_appointment(user, history, reply):
+    """AI javobidan qabul ma'lumotlarini ajratib saqlash"""
+    trigger_words = [
+        "administrator siz bilan bog'lanadi",
+        "tez orada bog'lanamiz",
+        "qabulingiz tasdiqlandi",
+        "ma'lumotlaringizni qabul qildik",
+    ]
+    if not any(word in reply.lower() for word in trigger_words):
+        return
+
+    # Suhbatdan ma'lumot ajratish uchun Groq ga yuborish
+    try:
+        extract_response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            max_tokens=200,
+            messages=[
+                {
+                    "role": "system",
+                    "content": """Suhbatdan qabul ma'lumotlarini JSON formatda ajrat.
+Faqat JSON qaytargr, boshqa hech narsa yozma:
+{"full_name": "ism familiya", "phone": "telefon", "doctor": "shifokor", "preferred_time": "vaqt"}
+Agar ma'lumot topilmasa bo'sh string qo'y."""
+                },
+                {
+                    "role": "user",
+                    "content": str([m for m in history[-10:]])
+                }
+            ]
+        )
+        import json
+        data_str = extract_response.choices[0].message.content.strip()
+        data_str = data_str.replace("```json", "").replace("```", "").strip()
+        data = json.loads(data_str)
+
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            await client.post(f"{API_URL}/bot/appointment", json={
+                "telegram_id": str(user.id),
+                "full_name": data.get("full_name") or f"{user.first_name} {user.last_name or ''}".strip(),
+                "phone": data.get("phone") or "Noma'lum",
+                "doctor": data.get("doctor") or "Noma'lum",
+                "preferred_time": data.get("preferred_time") or "Noma'lum",
+            })
+            logger.info(f"Qabul saqlandi: {data.get('full_name')}")
+    except Exception as e:
+        logger.warning(f"Qabul saqlashda xatolik: {e}")
+
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -252,6 +300,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await save_to_backend(user, user_text, reply)
         await notify_admins(context.bot, user, user_text, reply)
+        await extract_and_save_appointment(user, conversation_history[user_id], reply)
 
     except Exception as e:
         logger.error(f"Xatolik: {e}")
@@ -274,7 +323,6 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     print("🏥 MedLife Bot ishga tushmoqda...")
-    print(f"📡 API_URL: {API_URL}") 
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("stats", admin_stats))
