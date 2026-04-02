@@ -273,6 +273,7 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     print("🏥 MedLife Bot ishga tushmoqda...")
+    print(f"📡 API_URL: {API_URL}") 
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("stats", admin_stats))
