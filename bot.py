@@ -223,6 +223,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.edit_message_text(text=text, reply_markup=get_main_menu())
 
 
+
 async def extract_and_save_appointment(user, history, reply):
     """AI javobidan qabul ma'lumotlarini ajratib saqlash"""
     # Suhbatda telefon raqam bormi tekshirish
@@ -230,7 +231,7 @@ async def extract_and_save_appointment(user, history, reply):
     has_phone = any(c.isdigit() for c in recent_user_msgs) and len([c for c in recent_user_msgs if c.isdigit()]) >= 7
     if not has_phone:
         return
- 
+
     # Suhbatdan ma'lumot ajratish uchun Groq ga yuborish
     try:
         extract_response = groq_client.chat.completions.create(
@@ -253,8 +254,10 @@ Agar ma'lumot topilmasa bo'sh string qo'y."""
         import json
         data_str = extract_response.choices[0].message.content.strip()
         data_str = data_str.replace("```json", "").replace("```", "").strip()
-        data = json.loads(data_str)
- 
+        parsed = json.loads(data_str)
+        # Agar list kelsa, birinchi elementni ol
+        data = parsed[0] if isinstance(parsed, list) else parsed
+
         async with httpx.AsyncClient(timeout=5.0) as client:
             await client.post(f"{API_URL}/bot/appointment", json={
                 "telegram_id": str(user.id),
