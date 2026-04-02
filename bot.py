@@ -1,7 +1,10 @@
 import logging
 import os
-from openai import OpenAI
+from groq import Groq
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -15,14 +18,18 @@ from telegram.ext import (
 # =============================================
 # SOZLAMALAR
 # =============================================
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
 
-
+if not TELEGRAM_TOKEN:
+    raise ValueError("TELEGRAM_TOKEN environment variable is not set!")
+if not GROQ_API_KEY:
+    raise ValueError("GROQ_API_KEY environment variable is not set!")
 
 # Admin Telegram ID lari (botdan barcha xabarlarni ko'rish uchun)
 # O'z Telegram ID ingizni bilish uchun @userinfobot ga /start yozing
-ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()] # Admin ID larini shu yerga kiriting
+ADMIN_IDS = [123456789, 987654321]  # Admin ID larini shu yerga kiriting
 
 # Klinika ma'lumotlari — shu yerni o'zgartiring
 KLINIKA_INFO = """
@@ -96,11 +103,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-openai_client = OpenAI(
-    api_key=GROQ_API_KEY,
-    base_url="https://api.groq.com/openai/v1"
-)
-
+openai_client = Groq(api_key=GROQ_API_KEY)
 conversation_history = {}
 
 SYSTEM_PROMPT = f"""Siz MedLife Klinikasining professional AI assistantsiz.
@@ -123,6 +126,9 @@ QOIDALAR:
 - Qabulga yozmoqchi bo'lsa: Ism, telefon, kerakli shifokor va qulay vaqtni so'rang
 - Javoblar aniq va qisqa bo'lsin
 - Emoji lardan o'rinli foydalaning
+- Bemor og'riq yoki muammo aytsa — AVVAL hamdardlik bildiring: "Tushunaman", "Kechirasiz", "Xavotir olmang" kabi so'zlar ishlating
+- HECH QACHON "Qoyil!", "Zo'r!", "Ajoyib!" kabi maqtov so'zlarni ishlatmang — bu tibbiy muassasa uchun nomuvofiq
+- Og'riq, kasallik, shikoyat kabi hollarda jiddiy va g'amxo'r ohangda gapiring
 
 QABUL YOZISH JARAYONI:
 Bemor qabulga yozmoqchi bo'lsa:
